@@ -1,8 +1,14 @@
 const express = require('express');
 const cors = require('cors');
-const port = 5007 || process.env.PORT;
+const port = process.env.PORT || 5007;
 
 const app = express();
+const corsOptions = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+]
+
+app.use(cors(corsOptions));
 
 
 app.get('/', (req,res)=>{
