@@ -74,10 +74,16 @@ async function run(){
                 email,
                 role:'user',
             }
-            const exist = await usersCollection.findOne(query)
-            if(!exist){
-                const result = await usersCollection.insertOne(query);
-                res.send(result);
+            if(name && email){
+                const exist = await usersCollection.findOne(query)
+                if(!exist){
+                    const result = await usersCollection.insertOne(query);
+                    res.send(result);
+                }else{
+                    res.send({acknowledge:true,result:"Already inserted"})
+                }
+            }else{
+                res.send("Name or email missing")
             }
         })
 
@@ -93,10 +99,10 @@ run().catch(console.dir);
 
 
 app.get('/', (req,res)=>{
-    res.send('working 1.0')
+    res.send('working fine')
 })
 
 app.listen(port,()=>{
-    console.log('listening')
+    console.log(`listening on port : ${port}`)
 })
 
