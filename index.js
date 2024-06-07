@@ -64,6 +64,18 @@ async function run(){
             const result = await usersCollection.find().toArray();
             res.send(result);
         })
+
+        app.get('/deliveries',async(req,res)=>{
+            const result = await ordersCollection.find().toArray();
+            res.send(result);
+        })
+        app.get('/deliveries/:email',async(req,res)=>{
+            const email = req.params.email;
+            const query = {deliveredBy:email};
+            const result = await ordersCollection.find(query).toArray();
+            res.send(result);
+        })
+
         app.post('/place_order', async (req, res) => {
             try {
               const order = req.body;
