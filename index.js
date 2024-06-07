@@ -109,7 +109,7 @@ run().catch(console.dir);
 
 
 app.get('/', (req,res)=>{
-    res.send('working fine')
+    res.send('version 3.0')
 })
 
 app.listen(port,()=>{
