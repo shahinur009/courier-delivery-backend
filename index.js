@@ -81,12 +81,23 @@ async function run(){
             const result = await ordersCollection.find().toArray();
             res.send(result);
         })
-        app.get('/deliveries/:email',async(req,res)=>{
-            const email = req.params.email;
-            const query = {deliveredBy:email};
+        app.get('/deliveries/:id',async(req,res)=>{
+            const id = req.params.id;
+
+            const query = { 'deliveredBy.id': id }; 
             const result = await ordersCollection.find(query).toArray();
+            
             res.send(result);
         })
+        app.get('/update/:id',async(req,res)=>{
+            const id = req.params.id;
+            const query = {
+                _id: new ObjectId(id)
+            }
+            const result = await ordersCollection.findOne(query);
+            res.send(result);
+        })
+
 
         app.post('/place_order', async (req, res) => {
             try {
@@ -137,6 +148,25 @@ async function run(){
                 {$set:updatedData}
 
             )
+            res.send(result);
+        })
+        app.patch('/update/:id',async(req,res)=>{
+            const id = req.params.id;
+            const updatedData = req.body;
+            const query = {
+                _id: new ObjectId(id)
+            }
+            const result = await ordersCollection.updateOne(
+                query,
+                {$set:updatedData}
+            );
+            res.send(result);
+        })
+
+        app.delete('/delete/:id',async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id: new Object(id)};
+            const result = await ordersCollection.deleteOne(query);
             res.send(result);
         })
 
