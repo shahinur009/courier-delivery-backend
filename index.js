@@ -13,7 +13,7 @@ const corsOptions = {
         'https://deliver-0.web.app',
     ],
     optionsSuccessStatus: 200,
-    methods: 'GET,POST,PUT,DELETE',
+    methods: 'GET,POST,PUT,DELETE,PATCH',
     allowedHeaders: 'Content-Type,Authorization',
     credentials: true
 
@@ -56,7 +56,8 @@ async function run(){
             res.send(result);
         })
         app.get('/user',async(req,res)=>{
-            const query = req.params;
+            const {name,email} = req.query;
+            const query = {name,email};
             const result = await usersCollection.findOne(query);
             res.send(result);
         })
@@ -92,14 +93,13 @@ async function run(){
             }
           });
           
-        
         app.post('/users',async(req,res) =>{
             const {name,email} = req.body;
             console.log(name,email);
             const query = {
                 name,
                 email,
-                role:'user',
+                role:'user', 
             }
             if(name && email){
                 const exist = await usersCollection.findOne(query)
@@ -113,16 +113,24 @@ async function run(){
                 res.send("Name or email missing")
             }
         })
+        app.patch('/update/:id',async (req,res)=>{
+            const id = req.params.id;
+            const updatedData = req.body;
+            const result = await ordersCollection.updateOne(
+                {_id:new ObjectId(id)},
+                {$set:updatedData}
+
+            )
+            res.send(result);
+        })
 
     await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
-    
     }catch(error){
         console.log(error)
     }
 }
 run().catch(console.dir);
-
 
 
 app.get('/', (req,res)=>{
