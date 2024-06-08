@@ -62,7 +62,13 @@ async function run(){
             res.send(result);
         })
         app.get('/users',async(req,res)=>{
-            const result = await usersCollection.find().toArray();
+            const {email} = req.query;
+            
+            const result = await usersCollection.find(
+                {
+                    email:{$ne:email}
+                }
+            ).toArray();
             res.send(result);
         })
         app.get('/riders',async(req,res)=>{
