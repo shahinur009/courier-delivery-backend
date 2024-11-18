@@ -4,7 +4,9 @@ const helmet = require('helmet');
 const corsOptions = require('./config/corsOptions');
 const client = require('./config/db');
 
-const usersRoutes = require('./routes/users'); // Routes
+// Import routes
+const usersRoutes = require('./routes/users');
+const ordersRoutes = require('./routes/orders');
 
 const app = express();
 
@@ -15,7 +17,8 @@ app.use(helmet({
   crossOriginEmbedderPolicy: { policy: "require-corp" },
 }));
 
-// Routes
-app.use('/api', usersRoutes);
+// Use routes
+app.use('/api/users', usersRoutes);
+app.use('/api/orders', ordersRoutes);
 
 module.exports = { app, client };
