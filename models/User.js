@@ -1,14 +1,14 @@
-const { ObjectId } = require('mongodb');
-const client = require('../config/db');
+const { ObjectId } = require("mongodb");
+const client = require("../config/db");
 
-const usersCollection = client.db('courierApp').collection('users');
+const usersCollection = client.db("courier-delivery").collection("users");
 
 class User {
   constructor(userData) {
     this.name = userData.name;
     this.email = userData.email;
     this.password = userData.password;
-    this.role = userData.role || 'customer';
+    this.role = userData.role || "customer";
     this.phone = userData.phone;
     this.address = userData.address;
     this.createdAt = new Date();

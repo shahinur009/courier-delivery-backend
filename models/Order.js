@@ -1,7 +1,7 @@
 const { ObjectId } = require("mongodb");
 const client = require("../config/db");
 
-const ordersCollection = client.db("courierApp").collection("orders");
+const ordersCollection = client.db("courier-delivery").collection("orders");
 
 class Order {
   constructor(orderData) {
