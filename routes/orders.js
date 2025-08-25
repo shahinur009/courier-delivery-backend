@@ -1,21 +1,63 @@
-const express = require('express');
+const express = require("express");
 const {
   getAllOrders,
-  getOrdersByDeliverer,
+  getOrdersByCustomer,
+  getOrdersByAgent,
   getOrderById,
+  getOrderByTrackingNumber,
   placeOrder,
   updateOrderById,
-  deleteOrderById,
-} = require('../controllers/ordersController');
+  updateOrderStatus,
+  assignOrderToAgent,
+  getDashboardMetrics,
+} = require("../controllers/ordersController");
+const { authenticateToken, authorizeRoles } = require("../middleware/auth");
 
 const router = express.Router();
 
-// Route definitions
-router.get('/', getAllOrders);
-router.get('/:id', getOrdersByDeliverer);
-router.get('/order/:id', getOrderById);
-router.post('/', placeOrder);
-router.patch('/:id', updateOrderById);
-router.delete('/:id', deleteOrderById);
+// Public route (tracking)
+router.get("/track/:trackingNumber", getOrderByTrackingNumber);
+
+// Customer routes
+router.get("/customer/:customerId", authenticateToken, getOrdersByCustomer);
+router.post("/", authenticateToken, placeOrder);
+
+// Delivery agent routes
+router.get(
+  "/agent/:agentId",
+  authenticateToken,
+  authorizeRoles("agent", "admin"),
+  getOrdersByAgent
+);
+router.patch(
+  "/:id/status",
+  authenticateToken,
+  authorizeRoles("agent", "admin"),
+  updateOrderStatus
+);
+
+// Admin routes
+router.get("/", authenticateToken, authorizeRoles("admin"), getAllOrders);
+router.get(
+  "/metrics",
+  authenticateToken,
+  authorizeRoles("admin"),
+  getDashboardMetrics
+);
+router.patch(
+  "/:id/assign",
+  authenticateToken,
+  authorizeRoles("admin"),
+  assignOrderToAgent
+);
+router.patch(
+  "/:id",
+  authenticateToken,
+  authorizeRoles("admin"),
+  updateOrderById
+);
+
+// Common routes
+router.get("/:id", authenticateToken, getOrderById);
 
 module.exports = router;

@@ -1,28 +1,38 @@
-const { ObjectId } = require('mongodb');
-const client = require('../config/db');
+const { ObjectId } = require("mongodb");
+const Order = require("../models/Order");
 
-const ordersCollection = client.db('ordersCollection').collection('orders');
-
-// Fetch all orders
+// Fetch all orders (Admin only)
 const getAllOrders = async (req, res) => {
   try {
-    const orders = await ordersCollection.find().toArray();
-    res.send(orders);
+    const orders = await Order.getAllOrders();
+    res.json(orders);
   } catch (error) {
-    console.error('Error fetching orders:', error);
-    res.status(500).send({ error: 'Error fetching orders' });
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ error: "Error fetching orders" });
   }
 };
 
-// Fetch orders by deliveredBy ID
-const getOrdersByDeliverer = async (req, res) => {
+// Fetch orders by customer ID
+const getOrdersByCustomer = async (req, res) => {
   try {
-    const { id } = req.params;
-    const orders = await ordersCollection.find({ 'deliveredBy.id': id }).toArray();
-    res.send(orders);
+    const { customerId } = req.params;
+    const orders = await Order.findByCustomerId(customerId);
+    res.json(orders);
   } catch (error) {
-    console.error('Error fetching orders by deliverer:', error);
-    res.status(500).send({ error: 'Error fetching orders by deliverer' });
+    console.error("Error fetching customer orders:", error);
+    res.status(500).json({ error: "Error fetching customer orders" });
+  }
+};
+
+// Fetch orders by delivery agent ID
+const getOrdersByAgent = async (req, res) => {
+  try {
+    const { agentId } = req.params;
+    const orders = await Order.findByAgentId(agentId);
+    res.json(orders);
+  } catch (error) {
+    console.error("Error fetching agent orders:", error);
+    res.status(500).json({ error: "Error fetching agent orders" });
   }
 };
 
@@ -30,27 +40,51 @@ const getOrdersByDeliverer = async (req, res) => {
 const getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
-    const order = await ordersCollection.findOne({ _id: new ObjectId(id) });
+    const order = await Order.findById(id);
     if (order) {
-      res.send(order);
+      res.json(order);
     } else {
-      res.status(404).send({ error: 'Order not found' });
+      res.status(404).json({ error: "Order not found" });
     }
   } catch (error) {
-    console.error('Error fetching order by ID:', error);
-    res.status(500).send({ error: 'Error fetching order by ID' });
+    console.error("Error fetching order by ID:", error);
+    res.status(500).json({ error: "Error fetching order by ID" });
+  }
+};
+
+// Fetch order by tracking number
+const getOrderByTrackingNumber = async (req, res) => {
+  try {
+    const { trackingNumber } = req.params;
+    const order = await Order.findByTrackingNumber(trackingNumber);
+    if (order) {
+      res.json(order);
+    } else {
+      res.status(404).json({ error: "Order not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching order by tracking number:", error);
+    res.status(500).json({ error: "Error fetching order by tracking number" });
   }
 };
 
 // Place a new order
 const placeOrder = async (req, res) => {
   try {
-    const order = req.body;
-    const result = await ordersCollection.insertOne(order);
-    res.send(result);
+    const orderData = {
+      ...req.body,
+      customerId: req.user.userId, // From authenticated user
+    };
+
+    const order = await Order.create(orderData);
+    res.status(201).json({
+      message: "Order placed successfully",
+      order,
+      trackingNumber: order.trackingNumber,
+    });
   } catch (error) {
-    console.error('Error placing order:', error);
-    res.status(500).send({ error: 'Error placing order' });
+    console.error("Error placing order:", error);
+    res.status(500).json({ error: "Error placing order" });
   }
 };
 
@@ -58,35 +92,85 @@ const placeOrder = async (req, res) => {
 const updateOrderById = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedData = req.body;
-    const result = await ordersCollection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updatedData }
-    );
-    res.send(result);
+    const result = await Order.updateOrder(id, req.body);
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json({ message: "Order updated successfully", result });
   } catch (error) {
-    console.error('Error updating order:', error);
-    res.status(500).send({ error: 'Error updating order' });
+    console.error("Error updating order:", error);
+    res.status(500).json({ error: "Error updating order" });
   }
 };
 
-// Delete an order by ID
-const deleteOrderById = async (req, res) => {
+// Update order status
+const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await ordersCollection.deleteOne({ _id: new ObjectId(id) });
-    res.send(result);
+    const { status, currentLocation } = req.body;
+
+    const updateData = { status };
+    if (currentLocation) {
+      updateData.currentLocation = currentLocation;
+    }
+
+    const result = await Order.updateOrder(id, updateData);
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json({ message: "Order status updated successfully", result });
   } catch (error) {
-    console.error('Error deleting order:', error);
-    res.status(500).send({ error: 'Error deleting order' });
+    console.error("Error updating order status:", error);
+    res.status(500).json({ error: "Error updating order status" });
+  }
+};
+
+// Assign order to delivery agent
+const assignOrderToAgent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { agentId } = req.body;
+
+    const result = await Order.updateOrder(id, {
+      assignedTo: agentId,
+      status: "assigned",
+    });
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json({ message: "Order assigned to agent successfully", result });
+  } catch (error) {
+    console.error("Error assigning order to agent:", error);
+    res.status(500).json({ error: "Error assigning order to agent" });
+  }
+};
+
+// Get dashboard metrics (Admin only)
+const getDashboardMetrics = async (req, res) => {
+  try {
+    const metrics = await Order.getDashboardMetrics();
+    res.json(metrics);
+  } catch (error) {
+    console.error("Error fetching dashboard metrics:", error);
+    res.status(500).json({ error: "Error fetching dashboard metrics" });
   }
 };
 
 module.exports = {
   getAllOrders,
-  getOrdersByDeliverer,
+  getOrdersByCustomer,
+  getOrdersByAgent,
   getOrderById,
+  getOrderByTrackingNumber,
   placeOrder,
   updateOrderById,
-  deleteOrderById,
+  updateOrderStatus,
+  assignOrderToAgent,
+  getDashboardMetrics,
 };

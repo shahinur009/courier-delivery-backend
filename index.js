@@ -1,5 +1,5 @@
 const { app, client } = require('./app');
-const port = process.env.PORT || 5007;
+const port = process.env.PORT || 5000;
 
 async function startServer() {
   try {
